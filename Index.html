@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Alien X — Full ChatGPT-Style AI (Feature Panel + Voice + File + Top Controls + Floating Bar + Settings)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<!-- html2canvas CDN for screenshot capability -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<style>
+/* ====== RESET & THEME ====== */
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,Helvetica,sans-serif}
+:root{
+  --bg:#0b0f17; --panel:#111827; --muted:#94a3b8; --accent:#10b981; --glass:rgba(255,255,255,0.02);
+  --card:#0f1724; --border:#243041; --bubble:#1e293b; --text:#ffffff;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;height:100vh;gap:12px;padding:12px}
+
+/* ====== SIDEBAR ====== */
+.sidebar{
+  width:320px;background:var(--panel);border-radius:12px;padding:10px;border:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.logo{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.logo .txt{font-weight:800;font-size:18px}
+.nav-title{font-size:12px;color:var(--muted);margin:10px 8px 6px}
+.menu{display:flex;flex-direction:column;gap:6px;padding:4px}
+.menu button{
+  background:transparent;border:none;color:var(--text);padding:10px;border-radius:8px;text-align:left;font-size:14px;display:flex;gap:10px;align-items:center;cursor:pointer;
+}
+.menu button:hover{background:#121827}
+.history{flex:1;margin-top:8px;padding:6px;overflow:auto}
+.history-item{
+  background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+}
+.history-item.archived{opacity:0.6}
+.history-item .left{display:flex;flex-direction:column;gap:4px;max-width:70%}
+.history-item .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item .meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item .actions{display:flex;gap:6px}
+.action-btn{background:transparent;border:none;color:var(--muted);padding:6px;border-radius:6px;cursor:pointer}
+.action-btn:hover{background:#0e1824;color:var(--text)}
+.bottom-user{
+  border-top:1px solid rgba(255,255,255,0.03);padding:12px;margin-top:8px;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:8px;
+}
+.bottom-user:hover{background:#0e1722}
+.user-data{display:flex;flex-direction:column}
+.user-data .name{font-weight:700}
+.user-data .plan{font-size:12px;color:var(--muted)}
+.user-dropdown{
+  position:relative;
+}
+.user-menu{
+  display:none;position:absolute;left:12px;bottom:80px;width:260px;background:var(--panel);border:1px solid var(--border);padding:8px;border-radius:8px;
+  box-shadow:0 10px 30px rgba(2,6,23,0.6);z-index:50;
+}
+.user-menu button{display:flex;gap:10px;align-items:center;padding:8px;border-radius:6px;background:transparent;border:none;color:var(--text);cursor:pointer}
+.user-menu button:hover{background:#121827}
+
+/* ====== MAIN AREA ====== */
+.main{flex:1;display:flex;flex-direction:column;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:linear-gradient(180deg,#071026,#071220)}
+.header{padding:12px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);font-weight:700}
+.topbar{display:flex;gap:8px;padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);align-items:center}
+.model-select{padding:8px;border-radius:8px;background:#0b1220;border:1px solid rgba(255,255,255,0.03);color:var(--text)}
+.top-controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+.top-control-btn{background:transparent;border:none;color:var(--text);padding:8px;border-radius:8px;cursor:pointer;font-size:16px}
+.top-control-btn:hover{background:#0e1724}
+
+/* More menu in top right */
+.top-more-menu{position:absolute;right:24px;top:64px;background:var(--panel);border:1px solid var(--border);padding:8px;border-radius:8px;display:none;z-index:200}
+.top-more-menu button{display:flex;gap:8px;align-items:center;padding:8px;border-radius:6px;background:transparent;border:none;color:var(--text);cursor:pointer}
+.top-more-menu button:hover{background:#121827}
+
+/* Chat area */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.messages{flex:1;padding:18px;overflow:auto;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 220px)}
+.msg{max-width:75%;padding:12px;border-radius:12px;font-size:14px;line-height:1.45}
+.msg.user{align-self:flex-end;background:linear-gradient(90deg,var(--accent),#06b6d4);color:#021}
+.msg.bot{align-self:flex-start;background:var(--bubble);border:1px solid rgba(255,255,255,0.02)}
+.composer{display:flex;align-items:flex-end;padding:12px;border-top:1px solid rgba(255,255,255,0.03);gap:8px}
+.composer-left{display:flex;flex-direction:column;gap:8px}
+.plus-btn{width:42px;height:42px;border-radius:10px;background:#0e1724;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.input-area{flex:1;display:flex;gap:8px;align-items:center}
+.textbox{flex:1;position:relative}
+textarea.input{width:100%;min-height:56px;padding:12px;border-radius:10px;background:#081420;border:1px solid rgba(255,255,255,0.03);color:var(--text);resize:none}
+.controls{display:flex;gap:8px;align-items:center}
+.icon-btn{width:44px;height:44px;border-radius:10px;background:#0e1724;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.send-btn{background:var(--accent);border:none;color:#001;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+.file-preview{display:flex;gap:8px;align-items:center;margin-top:8px}
+.small-preview{background:#07121a;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
+
+/* Features panel (plus) */
+.features-panel{
+  position:fixed;left:340px;bottom:96px;width:320px;background:var(--panel);border:1px solid var(--border);padding:10px;border-radius:8px;box-shadow:0 20px 40px rgba(2,6,23,0.6);display:none;z-index:80;
+}
+.features-panel h4{margin-bottom:8px;color:#ffffff}
+.feature-row{display:flex;flex-direction:column;gap:8px}
+.feature-btn{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.02);cursor:pointer;color:#ffffff}
+.feature-btn:hover{background:#0e1724}
+.more-slide{display:none;flex-direction:column;gap:8px;margin-top:8px;padding:8px;border-top:1px dashed rgba(255,255,255,0.03)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:flex;align-items:center;justify-content:center;z-index:120}
+.modal{background:var(--panel);padding:18px;border-radius:8px;border:1px solid var(--border);width:80%;max-width:900px}
+
+/* ====== FLOATING BAR (new) ====== */
+.floating-bar{
+  position:fixed;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  width:64px;
+  max-height:70vh;
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:center;
+  z-index:210;
+  overflow:auto; /* lets the bar scroll if many buttons */
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+}
+.floating-btn{
+  width:48px;height:48px;border-radius:10px;background:#0e1724;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;font-size:18px;
+}
+.floating-btn:hover{background:#12202a}
+.floating-separator{width:36px;height:1px;background:rgba(255,255,255,0.02);margin:4px 0}
+
+/* slide panels that appear when clicking a floating button */
+.slide-panel{
+  position:fixed;
+  right:96px;
+  top:50%;
+  transform:translateY(-50%);
+  width:320px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  z-index:215;
+  box-shadow:0 12px 36px rgba(0,0,0,0.6);
+  display:none;
+}
+.slide-panel h4{margin-bottom:8px}
+.slide-panel .opt{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);margin-bottom:8px;cursor:pointer;background:transparent}
+.slide-panel .opt:hover{background:#0e1724}
+
+/* small inline toast */
+.inline-toast{
+  position:fixed;right:96px;bottom:24px;background:#0b1220;border:1px solid var(--border);padding:8px 12px;border-radius:8px;color:var(--text);z-index:300;display:none;
+}
+
+/* ====== SETTINGS (moved to sidebar) ====== */
+.settings-touch{
+  display:none; /* Hide bottom-left settings button */
+}
+.settings-panel{
+  position:fixed;
+  left:340px;
+  bottom:80px;
+  width:360px;
+  max-height:70vh;
+  overflow:auto;
+  transform:translateY(0);
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  z-index:225;
+  box-shadow:0 12px 36px rgba(0,0,0,0.6);
+  display:none;
+}
+.settings-panel h3{margin-bottom:8px;color:#ffffff}
+.settings-panel h4{margin-bottom:8px;color:#ffffff;margin-top:16px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.02)}
+.setting-row .left{display:flex;align-items:center;gap:10px}
+.setting-ctrl{background:transparent;border:none;color:#ffffff;cursor:pointer;padding:6px;border-radius:8px}
+.setting-ctrl:hover{background:#0e1724}
+.settings-panel .feature-row{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.settings-panel .feature-btn{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.02);cursor:pointer;color:#ffffff;width:100%}
+.settings-panel .feature-btn:hover{background:#0e1724}
+.settings-panel .more-slide{display:none;flex-direction:column;gap:8px;margin-top:8px;padding:8px;border-top:1px dashed rgba(255,255,255,0.03)}
+
+/* small helper text color */
+.helper{font-size:13px;color:var(--muted)}
+
+/* Responsive: reduce size on narrow screens */
+@media(max-width:1000px){
+  .sidebar{width:100%;height:220px;display:flex;flex-direction:row;overflow:auto}
+  .app{flex-direction:column;padding:8px}
+  .features-panel{left:12px;bottom:120px}
+  .floating-bar{right:12px}
+  .slide-panel{right:76px;width:260px}
+  .settings-panel{left:12px;bottom:12px;width:calc(100% - 24px);max-height:60vh}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div style="font-size:24px">🤖</div>
+      <div>
+        <div class="txt">Alien X</div>
+        <div style="font-size:12px;color:var(--muted)">Advanced AI Assistant</div>
+      </div>
+    </div>
+
+    <div class="nav-title">MAIN</div>
+    <div class="menu">
+      <button id="btnNewChat">➕ New Chat</button>
+      <button id="btnSearchChats">🔍 Search Chats</button>
+      <button id="btnLibrary">📚 Library</button>
+      <button id="btnProjects">📂 Projects</button>
+    </div>
+
+    <div class="nav-title">CHATS</div>
+    <div class="history" id="historyList">
+      <!-- History items will be appended here -->
+    </div>
+
+    <div class="bottom-user user-dropdown" id="userToggle">
+      <div class="bottom-user">
+        <div style="width:40px;height:40px;border-radius:8px;background:#0b1220;display:flex;align-items:center;justify-content:center">👤</div>
+        <div class="user-data">
+          <div class="name" id="userName">Guest</div>
+          <div class="plan" id="userPlan">Free Plan</div>
+        </div>
+      </div>
+      <div class="user-menu" id="userMenu">
+        <button id="menuUpgrade">🚀 Upgrade Plan</button>
+        <button id="menuPersonal">🎨 Personalization</button>
+        <button id="menuHelp">❓ Help</button>
+        <button id="menuSettings">⚙ Settings</button>
+        <button id="menuLogout">🚪 Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="header">Alien X AI Chat</div>
+
+    <div class="topbar">
+      <select id="modelSelect" class="model-select">
+        <option>GPT-4</option>
+        <option>GPT-4.1</option>
+        <option selected>GPT-5</option>
+        <option>Alien-Ultra (Beta)</option>
+      </select>
+
+      <div class="top-controls">
+        <!-- Top-right controls requested -->
+        <button class="top-control-btn" id="shareBtn" title="Share conversation">🔗 Share</button>
+        <button class="top-control-btn" id="openCanvasBtn" title="Open canvas">🖌</button>
+        <button class="top-control-btn" id="moreTopBtn" title="More">⋯</button>
+      </div>
+
+      <!-- More menu -->
+      <div class="top-more-menu" id="topMoreMenu" aria-hidden="true">
+        <button id="topArchiveBtn">📦 Archive</button>
+        <button id="topReportBtn">🚩 Report</button>
+        <button id="topDeleteBtn">🗑 Delete</button>
+      </div>
+    </div>
+
+    <section class="chat-area">
+      <div class="messages" id="messages"></div>
+
+      <div class="composer">
+        <div class="composer-left">
+          <div class="plus-btn" id="plusBtn" title="Open features">＋</div>
+        </div>
+
+        <div class="input-area">
+          <div class="textbox">
+            <textarea id="msgInput" class="input" placeholder="Ask anything..."></textarea>
+            <div id="filePreview" class="file-preview" style="display:none"></div>
+          </div>
+
+          <div class="controls">
+            <div class="icon-btn" id="micInput" title="Hold to record / click to record">🎙️</div>
+            <button class="send-btn" id="sendBtn">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Floating feature bar (right side) -->
+<div class="floating-bar" id="floatingBar" role="toolbar" aria-label="Quick tools">
+  <!-- Chat with screenshot -->
+  <button class="floating-btn" id="btnScreenshot" title="Chat with screenshot">📸</button>
+
+  <!-- Translate this page -->
+  <button class="floating-btn" id="btnTranslate" title="Translate this page">🌐</button>
+
+  <!-- Wrong (open slide with options) -->
+  <button class="floating-btn" id="btnWrong" title="Report issue">⚠</button>
+
+  <div class="floating-separator" aria-hidden="true"></div>
+
+  <!-- Power button (slide with hide options) -->
+  <button class="floating-btn" id="btnPower" title="Power / hide options">⏻</button>
+</div>
+
+<!-- Slide panels (appear to the left of the floating bar) -->
+<div class="slide-panel" id="panelScreenshot">
+  <h4>Chat screenshot</h4>
+  <p>Capture the visible chat area and upload to the server, or ask server to capture.</p>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button id="doCapture" class="feature-btn">Capture & Upload</button>
+    <button id="doCaptureServer" class="feature-btn">Ask server to generate</button>
+  </div>
+</div>
+
+<div class="slide-panel" id="panelTranslate">
+  <h4>Translate this page</h4>
+  <p>Translate the visible page text. Enter target language code (e.g. en, hi, es).</p>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <input id="translateLang" placeholder="target (en)" style="flex:1;padding:8px;border-radius:8px;background:#061322;border:1px solid rgba(255,255,255,0.03);color:var(--muted)"/>
+    <button id="doTranslate" class="feature-btn">Translate</button>
+  </div>
+  <div id="translateResult" style="margin-top:8px;color:var(--muted);font-size:13px;max-height:200px;overflow:auto"></div>
+</div>
+
+<div class="slide-panel" id="panelWrong">
+  <h4>Report issue</h4>
+  <p>Quick reasons</p>
+  <div class="opt" data-reason="Wrong answer">Wrong answer</div>
+  <div class="opt" data-reason="Offensive content">Offensive content</div>
+  <div class="opt" data-reason="Spam/Irrelevant">Spam / Irrelevant</div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <input id="wrongExtra" placeholder="Extra details (optional)" style="flex:1;padding:8px;border-radius:8px;background:#061322;border:1px solid rgba(255,255,255,0.03);color:var(--muted)"/>
+    <button id="doReportWrong" class="feature-btn">Report</button>
+  </div>
+</div>
+
+<div class="slide-panel" id="panelPower">
+  <h4>Power options</h4>
+  <div class="opt" id="optHideSite">Hide on this site</div>
+  <div class="opt" id="optHideAlways">Hide always</div>
+  <div style="margin-top:8px;color:var(--muted);font-size:13px">Choosing <b>Hide always</b> sets a persistent preference sent to server and stored locally.</div>
+</div>
+
+<!-- Settings touch (bottom-left) -->
+<div class="settings-touch" id="settingsTouch" title="Open settings">✉️</div>
+
+<!-- Settings panel -->
+<div class="settings-panel" id="settingsPanel" aria-hidden="true">
+  <h3>Settings ⚙️</h3>
+  <div class="helper" id="settingsStatus">Loading settings...</div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>📧 Account Email</div>
+      <div class="helper" id="settingsEmail">—</div>
+    </div>
+    <button class="setting-ctrl" id="btnEditEmail">✏️</button>
+  </div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>🔔 Notifications</div>
+      <div class="helper">Receive app notifications</div>
+    </div>
+    <label class="setting-ctrl">
+      <input type="checkbox" id="toggleNotifications"> 
+    </label>
+  </div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>🌗 Theme</div>
+      <div class="helper">Dark / Light</div>
+    </div>
+    <select id="selectTheme" class="setting-ctrl">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+  </div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>🔑 API Key</div>
+      <div class="helper">Add or rotate your API key for server integration</div>
+    </div>
+    <button class="setting-ctrl" id="btnApiKey">🔒</button>
+  </div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>📤 Export Data</div>
+      <div class="helper">Download your conversations</div>
+    </div>
+    <button class="setting-ctrl" id="btnExportData">⬇️</button>
+  </div>
+
+  <div class="setting-row">
+    <div class="left">
+      <div>🔒 Privacy</div>
+      <div class="helper">Manage data retention</div>
+    </div>
+    <button class="setting-ctrl" id="btnPrivacy">⚖️</button>
+  </div>
+
+  <h4>Quick Tools</h4>
+  <div class="feature-row">
+    <button class="feature-btn" id="featAddFilesSettings">📁 Add Photos & Files</button>
+    <button class="feature-btn" id="featCreateImageSettings">🖼 Create Image</button>
+    <button class="feature-btn" id="featThinkingSettings">💭 Thinking</button>
+    <button class="feature-btn" id="featDeepResearchSettings">🔎 Deep research</button>
+    <button class="feature-btn" id="featStudySettings">📘 Study & learn</button>
+    <button class="feature-btn" id="featMoreSettings">⋯ More</button>
+
+    <div class="more-slide" id="moreSlideSettings">
+      <button class="feature-btn" id="featWebSearchSettings">🌐 Web search</button>
+      <button class="feature-btn" id="featCanvasSettings">🖌 Canvas</button>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+    <button id="btnCloseSettings" class="feature-btn">Close</button>
+  </div>
+</div>
+
+<div class="inline-toast" id="inlineToast"></div>
+
+<!-- Features Panel (existing) -->
+<div class="features-panel" id="featuresPanel">
+  <h4>Quick Tools</h4>
+  <div class="feature-row">
+    <button class="feature-btn" id="featAddFiles">📁 Add Photos & Files</button>
+    <button class="feature-btn" id="featCreateImage">🖼 Create Image</button>
+    <button class="feature-btn" id="featThinking">💭 Thinking</button>
+    <button class="feature-btn" id="featDeepResearch">🔎 Deep research</button>
+    <button class="feature-btn" id="featStudy">📘 Study & learn</button>
+    <button class="feature-btn" id="featMore">⋯ More</button>
+
+    <div class="more-slide" id="moreSlide">
+      <button class="feature-btn" id="featWebSearch">🌐 Web search</button>
+      <button class="feature-btn" id="featCanvas">🖌 Canvas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden inputs -->
+<input type="file" id="hiddenFileInput" multiple style="display:none" accept="image/*,video/*,application/pdf" />
+
+<!-- Modal placeholder -->
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+/* ====== App state (kept from your original file) ====== */
+const messagesEl = document.getElementById('messages');
+const historyList = document.getElementById('historyList');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const plusBtn = document.getElementById('plusBtn');
+const featuresPanel = document.getElementById('featuresPanel');
+const moreSlide = document.getElementById('moreSlide');
+const hiddenFileInput = document.getElementById('hiddenFileInput');
+const filePreview = document.getElementById('filePreview');
+
+const shareBtn = document.getElementById('shareBtn');
+const openCanvasBtn = document.getElementById('openCanvasBtn');
+const moreTopBtn = document.getElementById('moreTopBtn');
+const topMoreMenu = document.getElementById('topMoreMenu');
+const topArchiveBtn = document.getElementById('topArchiveBtn');
+const topReportBtn = document.getElementById('topReportBtn');
+const topDeleteBtn = document.getElementById('topDeleteBtn');
+
+const floatingBar = document.getElementById('floatingBar');
+const btnScreenshot = document.getElementById('btnScreenshot');
+const btnTranslate = document.getElementById('btnTranslate');
+const btnWrong = document.getElementById('btnWrong');
+const btnPower = document.getElementById('btnPower');
+
+const panelScreenshot = document.getElementById('panelScreenshot');
+const panelTranslate = document.getElementById('panelTranslate');
+const panelWrong = document.getElementById('panelWrong');
+const panelPower = document.getElementById('panelPower');
+
+const doCapture = document.getElementById('doCapture');
+const doCaptureServer = document.getElementById('doCaptureServer');
+const doTranslate = document.getElementById('doTranslate');
+const translateLang = document.getElementById('translateLang');
+const translateResult = document.getElementById('translateResult');
+const doReportWrong = document.getElementById('doReportWrong');
+const wrongExtra = document.getElementById('wrongExtra');
+
+const optHideSite = document.getElementById('optHideSite');
+const optHideAlways = document.getElementById('optHideAlways');
+
+const inlineToast = document.getElementById('inlineToast');
+
+/* Settings UI references */
+const settingsTouch = document.getElementById('settingsTouch');
+const settingsPanel = document.getElementById('settingsPanel');
+const settingsStatus = document.getElementById('settingsStatus');
+const settingsEmail = document.getElementById('settingsEmail');
+const btnEditEmail = document.getElementById('btnEditEmail');
+const toggleNotifications = document.getElementById('toggleNotifications');
+const selectTheme = document.getElementById('selectTheme');
+const btnApiKey = document.getElementById('btnApiKey');
+const btnExportData = document.getElementById('btnExportData');
+const btnPrivacy = document.getElementById('btnPrivacy');
+const btnCloseSettings = document.getElementById('btnCloseSettings');
+
+let conversations = [];      // array of { id, title, messages: [ {sender,text,t} ], archived }
+let activeConvId = null;
+let recorder = null;
+let recordingChunks = [];
+let isRecording = false;
+
+/* ====== Utility helpers ====== */
+function genId(){ return 'c_' + Math.random().toString(36).slice(2,9); }
+function timeNow(){ return new Date().toLocaleTimeString(); }
+function safeText(t){ return (t||'').toString(); }
+function toast(msg, timeout = 3000){
+  inlineToast.textContent = msg;
+  inlineToast.style.display = 'block';
+  clearTimeout(inlineToast._t);
+  inlineToast._t = setTimeout(()=> inlineToast.style.display = 'none', timeout);
+}
+
+/* ====== Messages rendering ====== */
+function appendMessage(sender, text, meta){
+  const el = document.createElement('div');
+  el.className = 'msg ' + (sender === 'user' ? 'user' : 'bot');
+  el.innerHTML = `<div>${escapeHtml(text)}</div>${meta? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${escapeHtml(meta)}</div>` : ''}`;
+  messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ====== Conversations (local) ====== */
+function createConversation(title='New chat'){
+  const id = genId();
+  const conv = { id, title, messages: [], archived:false };
+  conversations.unshift(conv);
+  activeConvId = id;
+  renderHistory();
+  renderMessages();
+  return conv;
+}
+function addMessageToConv(convId, sender, text){
+  const conv = conversations.find(c=>c.id===convId);
+  if(!conv) return;
+  conv.messages.push({ sender, text, t: Date.now() });
+  renderMessages();
+  renderHistory();
+}
+
+/* ====== Render history and messages ====== */
+function renderHistory(){
+  historyList.innerHTML = '';
+  conversations.forEach(conv=>{
+    const it = document.createElement('div');
+    it.className = 'history-item' + (conv.archived ? ' archived' : '');
+    it.dataset.id = conv.id;
+    it.innerHTML = `
+      <div class="left">
+        <div class="title">${escapeHtml(conv.title)}</div>
+        <div class="meta">${conv.messages.length ? escapeHtml(conv.messages[conv.messages.length-1].text.slice(0,80)) : 'Empty'}</div>
+      </div>
+      <div class="actions">
+        <button class="action-btn" data-act="archive" title="Archive">📦</button>
+        <button class="action-btn" data-act="save" title="Save">💾</button>
+        <button class="action-btn" data-act="delete" title="Delete">🗑</button>
+      </div>`;
+    it.addEventListener('click', (e)=>{
+      if(e.target && e.target.dataset && e.target.dataset.act) return;
+      activeConvId = conv.id;
+      renderMessages();
+    });
+    // actions:
+    it.querySelectorAll('.action-btn').forEach(b=>{
+      b.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const act = b.dataset.act;
+        if(act === 'archive'){ conv.archived = !conv.archived; renderHistory(); notifyServerArchive(conv.id, conv.archived); }
+        if(act === 'save'){ exportConversation(conv.id); }
+        if(act === 'delete'){ if(confirm('Delete conversation?')){ handleDeleteConv(conv.id); } }
+      });
+    });
+    historyList.appendChild(it);
+  });
+}
+
+/* Render current messages */
+function renderMessages(){
+  messagesEl.innerHTML = '';
+  const conv = conversations.find(c=>c.id===activeConvId);
+  if(!conv){
+    appendMessage('bot','Welcome — create a new chat or select one from the left.');
+    return;
+  }
+  conv.messages.forEach(m=>{
+    appendMessage(m.sender, m.text, m.t ? new Date(m.t).toLocaleString() : null);
+  });
+}
+
+/* Handle deletion both local + server */
+function handleDeleteConv(convId){
+  const conv = conversations.find(c => c.id === convId);
+  if(!conv) return;
+  // call server to delete
+  fetch('/conversation/delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ id: convId })
+  }).catch(()=>{/* ignore network error; still delete locally */});
+  conversations = conversations.filter(c=>c.id!==convId);
+  if(activeConvId===convId) activeConvId = conversations[0]?.id || null;
+  renderHistory();
+  renderMessages();
+}
+
+/* ====== Start with a couple of conversations (demo) ====== */
+(function seedDemo(){
+  conversations = [];
+  const a = createConversation('Getting started');
+  addMessageToConv(a.id,'bot','Hello — this is your Alien X workspace. Use the + button to access tools, record voice, or type a message.');
+  const b = createConversation('Research notes');
+  addMessageToConv(b.id,'bot','Saved research notes will appear here as you use Deep research.');
+  renderHistory();
+  renderMessages();
+})();
+
+/* ====== Send text message to backend or local echo ====== */
+// REPLACE your existing sendMessage() with this function
+async function sendMessage(){
+  const text = msgInput.value.trim();
+  if(!text) return;
+  // ensure a conversation exists
+  if(!activeConvId) {
+    const conv = createConversation('New chat');
+    activeConvId = conv.id;
+  }
+
+  // local echo: user message
+  addMessageToConv(activeConvId, 'user', text);
+  msgInput.value = '';
+
+  // show a thinking placeholder that we can remove/replace
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'msg bot';
+  thinkingEl.innerHTML = `<div>⏳ Thinking...</div>`;
+  messagesEl.appendChild(thinkingEl);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // choose model from UI (if you have a model select)
+  const model = (document.getElementById('modelSelect')?.value) || 'gpt-3.5-turbo';
+
+  // endpoint: update if your server uses a different path
+  const endpoint = 'http://localhost:5000/api/chat';
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        model,
+        conversation_id: activeConvId
+      })
+    });
+
+    if(!res.ok){
+      throw new Error('Server returned ' + res.status);
+    }
+
+    const data = await res.json();
+    const reply = data.reply || data.text || data.message || '[no reply]';
+
+    // remove thinking and append the real bot reply
+    thinkingEl.remove();
+    appendMessage('bot', reply);
+    addMessageToConv(activeConvId, 'bot', reply);
+
+  } catch (err) {
+    // on error: remove thinking, show error and fallback
+    thinkingEl.remove();
+    console.error('Chat error', err);
+    appendMessage('bot', '⚠ Server error — please try again later.');
+    addMessageToConv(activeConvId, 'bot', '⚠ Server error: ' + (err.message || ''));
+  }
+}
+
+/* Hook send button and Enter */
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+/* ====== FEATURES PANEL (plus button) ====== */
+plusBtn.addEventListener('click', ()=>{
+  featuresPanel.style.display = featuresPanel.style.display === 'block' ? 'none' : 'block';
+});
+
+/* Feature buttons (kept similar to your original) */
+document.getElementById('featAddFiles')?.addEventListener('click', ()=> hiddenFileInput.click());
+document.getElementById('featCreateImage')?.addEventListener('click', async ()=>{
+  const prompt = prompt('Image prompt:');
+  if(!prompt) return;
+  try{
+    const res = await fetch('/create-image', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt, conversation_id: activeConvId })
+    });
+    if(!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    appendMessage('bot', 'Image created: ' + (data.imageUrl || '[no url]'));
+    addMessageToConv(activeConvId, 'bot', 'Image created: ' + (data.imageUrl || '[no url]'));
+  }catch(e){
+    appendMessage('bot', '⚠ Create image failed (server). Prompt saved locally.');
+    addMessageToConv(activeConvId, 'bot', '⚠ Create image failed (server). Prompt: ' + prompt);
+  }
+});
+document.getElementById('featThinking')?.addEventListener('click', ()=>{
+  addMessageToConv(activeConvId, 'user', '[Thinking request]');
+  sendShortBackend('/thinking', { note: 'thinking', conversation_id: activeConvId });
+});
+document.getElementById('featDeepResearch')?.addEventListener('click', ()=>{
+  const q = prompt('Research query:');
+  if(!q) return;
+  addMessageToConv(activeConvId, 'user', '[Deep research] ' + q);
+  sendShortBackend('/research', { query: q, conversation_id: activeConvId });
+});
+document.getElementById('featStudy')?.addEventListener('click', ()=>{
+  const topic = prompt('Study topic:');
+  if(!topic) return;
+  addMessageToConv(activeConvId, 'user', '[Study & learn] ' + topic);
+  sendShortBackend('/study', { topic, conversation_id: activeConvId });
+});
+document.getElementById('featMore')?.addEventListener('click', ()=>{
+  moreSlide.style.display = moreSlide.style.display === 'flex' ? 'none' : 'flex';
+});
+document.getElementById('featWebSearch')?.addEventListener('click', async ()=>{
+  const q = prompt('Web search query:');
+  if(!q) return;
+  addMessageToConv(activeConvId, 'user', '[Web search] ' + q);
+  sendShortBackend('/web-search', { q, conversation_id: activeConvId });
+});
+document.getElementById('featCanvas')?.addEventListener('click', ()=>{
+  openCanvas();
+});
+
+/* Quick Tools buttons in Settings panel */
+const moreSlideSettings = document.getElementById('moreSlideSettings');
+document.getElementById('featAddFilesSettings')?.addEventListener('click', ()=> hiddenFileInput.click());
+document.getElementById('featCreateImageSettings')?.addEventListener('click', async ()=>{
+  const prompt = prompt('Image prompt:');
+  if(!prompt) return;
+  try{
+    const res = await fetch('/create-image', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt, conversation_id: activeConvId })
+    });
+    if(!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    appendMessage('bot', 'Image created: ' + (data.imageUrl || '[no url]'));
+    addMessageToConv(activeConvId, 'bot', 'Image created: ' + (data.imageUrl || '[no url]'));
+  }catch(e){
+    appendMessage('bot', '⚠ Create image failed (server). Prompt saved locally.');
+    addMessageToConv(activeConvId, 'bot', '⚠ Create image failed (server). Prompt: ' + prompt);
+  }
+});
+document.getElementById('featThinkingSettings')?.addEventListener('click', ()=>{
+  addMessageToConv(activeConvId, 'user', '[Thinking request]');
+  sendShortBackend('/thinking', { note: 'thinking', conversation_id: activeConvId });
+});
+document.getElementById('featDeepResearchSettings')?.addEventListener('click', ()=>{
+  const q = prompt('Research query:');
+  if(!q) return;
+  addMessageToConv(activeConvId, 'user', '[Deep research] ' + q);
+  sendShortBackend('/research', { query: q, conversation_id: activeConvId });
+});
+document.getElementById('featStudySettings')?.addEventListener('click', ()=>{
+  const topic = prompt('Study topic:');
+  if(!topic) return;
+  addMessageToConv(activeConvId, 'user', '[Study & learn] ' + topic);
+  sendShortBackend('/study', { topic, conversation_id: activeConvId });
+});
+document.getElementById('featMoreSettings')?.addEventListener('click', ()=>{
+  moreSlideSettings.style.display = moreSlideSettings.style.display === 'flex' ? 'none' : 'flex';
+});
+document.getElementById('featWebSearchSettings')?.addEventListener('click', async ()=>{
+  const q = prompt('Web search query:');
+  if(!q) return;
+  addMessageToConv(activeConvId, 'user', '[Web search] ' + q);
+  sendShortBackend('/web-search', { q, conversation_id: activeConvId });
+});
+document.getElementById('featCanvasSettings')?.addEventListener('click', ()=>{
+  openCanvas();
+});
+
+/* helper to call single-purpose backend endpoints */
+async function sendShortBackend(path, payload){
+  appendMessage('bot','⏳ Processing...');
+  try{
+    const res = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if(!res.ok) throw new Error('Server returned ' + res.status);
+    const data = await res.json();
+    appendMessage('bot', data.reply || data.result || JSON.stringify(data).slice(0,400));
+    addMessageToConv(activeConvId, 'bot', data.reply || data.result || '[no result]');
+  }catch(err){
+    appendMessage('bot','⚠ Server request failed: ' + err.message);
+    addMessageToConv(activeConvId, 'bot', '⚠ Server request failed: ' + (err.message||''));
+  }
+}
+
+/* ====== File upload handling (from features panel) ====== */
+hiddenFileInput.addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+  filePreview.innerHTML = '';
+  files.forEach(f=>{
+    const p = document.createElement('div'); p.className = 'small-preview'; p.textContent = f.name;
+    filePreview.appendChild(p);
+  });
+  filePreview.style.display = 'flex';
+  const fd = new FormData();
+  files.forEach((f, i) => fd.append('file' + i, f));
+  fd.append('conversation_id', activeConvId || '');
+  try{
+    const res = await fetch('/upload', { method: 'POST', body: fd });
+    if(!res.ok) throw new Error('Upload failed ' + res.status);
+    const data = await res.json();
+    appendMessage('bot', 'Files uploaded. Server response: ' + (data.message || JSON.stringify(data).slice(0,200)));
+    addMessageToConv(activeConvId, 'bot', 'Files uploaded: ' + files.map(x=>x.name).join(', '));
+  }catch(err){
+    appendMessage('bot', '⚠ Upload failed (server). Files kept locally.');
+    addMessageToConv(activeConvId, 'bot', '⚠ Upload failed (server). Files: ' + files.map(x=>x.name).join(', '));
+    console.warn(err);
+  } finally {
+    hiddenFileInput.value = '';
+    setTimeout(()=>{ filePreview.style.display='none'; filePreview.innerHTML=''; }, 6000);
+  }
+});
+
+/* ====== Microphone recording (click toggles) ====== */
+const micInput = document.getElementById('micInput');
+if(micInput) micInput.addEventListener('click', toggleRecording);
+
+async function toggleRecording(){
+  if(isRecording){
+    stopRecordingAndSend();
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert('Microphone not supported in this browser.');
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream);
+    recordingChunks = [];
+    recorder.ondataavailable = e => { if(e.data.size > 0) recordingChunks.push(e.data); };
+    recorder.onstop = async () => {
+      const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+      appendMessage('user', '[Voice message] (sending...)', 'Recorded at ' + timeNow());
+      const fd = new FormData();
+      fd.append('audio', blob, 'recording.webm');
+      fd.append('conversation_id', activeConvId || '');
+      try{
+        const res = await fetch('/audio', { method: 'POST', body: fd });
+        if(!res.ok) throw new Error('Audio upload failed ' + res.status);
+        const data = await res.json();
+        appendMessage('bot', data.reply || 'Audio processed (server).');
+        addMessageToConv(activeConvId, 'user', '[Voice]' );
+        addMessageToConv(activeConvId, 'bot', data.reply || '[server audio reply]');
+      }catch(err){
+        appendMessage('bot', '⚠ Audio processing failed (server). Try again later.');
+        addMessageToConv(activeConvId, 'bot', '⚠ Audio processing failed (server).');
+      }
+    };
+    recorder.start();
+    isRecording = true;
+    micInput.style.background = '#0b884d';
+    micInput.textContent = '⏺';
+    setTimeout(()=>{ if(isRecording) stopRecordingAndSend(); }, 30000);
+  }catch(err){
+    alert('Microphone permission denied or error: ' + err.message);
+  }
+}
+
+function stopRecordingAndSend(){
+  if(!recorder) return;
+  recorder.stop();
+  isRecording = false;
+  if(micInput){ micInput.style.background = ''; micInput.textContent = '🎙️'; }
+}
+
+/* ====== EXPORT (save) ====== */
+function exportConversation(convId){
+  const conv = conversations.find(c=>c.id===convId);
+  if(!conv) return;
+  const text = conv.messages.map(m=>`${m.sender.toUpperCase()}: ${m.text}`).join("\n\n");
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (conv.title || 'conversation') + '.txt';
+  a.click();
+}
+
+/* ====== Modal / helper UI ====== */
+function showModal(html){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop" id="modalBackdrop"><div class="modal">${html}<div style="text-align:right;margin-top:12px"><button id="closeModalBtn" style="padding:8px;border-radius:8px;background:var(--accent);border:none;color:#001;font-weight:700">Close</button></div></div></div>`;
+  root.style.display = 'block';
+  document.getElementById('closeModalBtn').onclick = ()=>{ root.innerHTML=''; root.style.display='none'; };
+}
+
+/* ====== User dropdown toggles ====== */
+document.getElementById('userToggle').addEventListener('click', (e)=>{
+  const menu = document.getElementById('userMenu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+});
+document.getElementById('menuLogout').addEventListener('click', ()=>{ if(confirm('Log out?')) { currentUser = null; document.getElementById('userName').textContent = 'Guest'; document.getElementById('userPlan').textContent = 'Free Plan'; document.getElementById('userMenu').style.display='none'; }});
+document.getElementById('menuUpgrade').addEventListener('click', ()=> showModal('<h3>Upgrade</h3><p>Upgrade options (placeholder). Connect server to enable plan upgrades.</p>'));
+document.getElementById('menuHelp').addEventListener('click', ()=> showModal('<h3>Help</h3><p>Help docs & commands: /new /clear /model</p>'));
+document.getElementById('menuSettings').addEventListener('click', async ()=>{
+  document.getElementById('userMenu').style.display='none';
+  const visible = settingsPanel.style.display === 'block';
+  if(visible){
+    settingsPanel.style.display = 'none';
+  } else {
+    settingsPanel.style.display = 'block';
+    settingsStatus.textContent = 'Loading settings...';
+    await loadSettingsFromServer();
+  }
+});
+
+/* ====== Sidebar callbacks ====== */
+document.getElementById('btnNewChat').addEventListener('click', ()=>{
+  const title = prompt('Conversation title','New chat');
+  const conv = createConversation(title || 'New chat');
+  addMessageToConv(conv.id,'bot','Conversation created.');
+});
+document.getElementById('btnSearchChats').addEventListener('click', ()=>{
+  const q = prompt('Search across chats:');
+  if(!q) return;
+  const results = [];
+  conversations.forEach(conv=>{
+    conv.messages.forEach(m=>{
+      if(m.text.toLowerCase().includes(q.toLowerCase())) results.push({conv, text:m.text});
+    });
+  });
+  if(!results.length) return alert('No results');
+  showModal('<h3>Search results</h3><div style="max-height:400px;overflow:auto">' + results.map(r=>`<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.03)"><b>${escapeHtml(r.conv.title)}</b><div style="color:var(--muted)">${escapeHtml(r.text)}</div></div>`).join('') + '</div>');
+});
+document.getElementById('btnLibrary').addEventListener('click', ()=> showModal('<h3>Library</h3><p>Saved prompts, snippets and knowledge base (placeholder).</p>'));
+document.getElementById('btnProjects').addEventListener('click', ()=> showModal('<h3>Projects</h3><p>Project list (placeholder)</p>'));
+
+/* ====== TOP controls: share, canvas, more ====== */
+shareBtn.addEventListener('click', async ()=>{
+  if(!activeConvId) return alert('Select a conversation to share.');
+  try{
+    const res = await fetch('/conversation/share', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: activeConvId }) });
+    if(!res.ok) throw new Error('Share failed ' + res.status);
+    const data = await res.json();
+    showModal(`<h3>Share Link</h3><p>Shareable URL:</p><pre style="word-break:break-all">${escapeHtml(data.url || 'No URL returned')}</pre>`);
+  }catch(err){
+    showModal(`<h3>Share</h3><p>Share failed: ${escapeHtml(err.message || '')}</p>`);
+  }
+});
+
+openCanvasBtn.addEventListener('click', ()=>{
+  showModal(`<h3>Canvas</h3><p>Canvas (placeholder). You can implement drawing tools here.</p><div style="height:320px;background:#061226;border-radius:8px;margin-top:12px;display:flex;align-items:center;justify-content:center;color:var(--muted)">Canvas placeholder</div>`);
+  if(activeConvId){
+    fetch('/conversation/canvas-open', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: activeConvId }) }).catch(()=>{});
+  }
+});
+
+/* More menu (top-right) */
+moreTopBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  topMoreMenu.style.display = topMoreMenu.style.display === 'block' ? 'none' : 'block';
+  topMoreMenu.setAttribute('aria-hidden', topMoreMenu.style.display === 'block' ? 'false' : 'true');
+});
+topArchiveBtn.addEventListener('click', ()=>{
+  if(!activeConvId) return alert('Select a conversation first.');
+  const conv = conversations.find(c=>c.id===activeConvId);
+  if(!conv) return;
+  conv.archived = !conv.archived;
+  renderHistory();
+  topMoreMenu.style.display='none';
+  notifyServerArchive(activeConvId, conv.archived);
+});
+topReportBtn.addEventListener('click', async ()=>{
+  if(!activeConvId) return alert('Select a conversation first.');
+  const reason = prompt('Report reason (optional):','Inappropriate content');
+  if(reason === null) return;
+  topMoreMenu.style.display='none';
+  try{
+    const res = await fetch('/conversation/report', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: activeConvId, reason }) });
+    if(!res.ok) throw new Error('Report failed ' + res.status);
+    const data = await res.json();
+    showModal(`<h3>Reported</h3><p>Server response: ${escapeHtml(data.message || 'Reported')}</p>`);
+  }catch(err){
+    showModal(`<h3>Report</h3><p>Report failed: ${escapeHtml(err.message || '')}</p>`);
+  }
+});
+topDeleteBtn.addEventListener('click', ()=>{
+  if(!activeConvId) return alert('Select a conversation first.');
+  if(!confirm('Delete this conversation?')) return;
+  topMoreMenu.style.display='none';
+  handleDeleteConv(activeConvId);
+});
+
+/* ====== Click-away to hide top-menu & features & slides ====== */
+document.addEventListener('click', (e)=>{
+  if(!topMoreMenu.contains(e.target) && e.target !== moreTopBtn) topMoreMenu.style.display='none';
+  const insideFeatures = featuresPanel.contains(e.target) || plusBtn.contains(e.target);
+  if(!insideFeatures) featuresPanel.style.display = 'none';
+  const insideUser = document.getElementById('userMenu').contains(e.target) || document.getElementById('userToggle').contains(e.target);
+  if(!insideUser) document.getElementById('userMenu').style.display = 'none';
+
+  // close any slide panels when clicking outside
+  if(!panelScreenshot.contains(e.target) && e.target !== btnScreenshot) panelScreenshot.style.display = 'none';
+  if(!panelTranslate.contains(e.target) && e.target !== btnTranslate) panelTranslate.style.display = 'none';
+  if(!panelWrong.contains(e.target) && e.target !== btnWrong) panelWrong.style.display = 'none';
+  if(!panelPower.contains(e.target) && e.target !== btnPower) panelPower.style.display = 'none';
+});
+
+/* ====== Server notify helpers ====== */
+function notifyServerArchive(id, archived){
+  fetch('/conversation/archive', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ id, archived })
+  }).catch(()=>{});
+}
+
+/* ====== FLOATING BAR behaviour ====== */
+/* Toggle specific slide panel next to the bar */
+function togglePanel(panel){
+  // hide all first
+  [panelScreenshot, panelTranslate, panelWrong, panelPower].forEach(p=>{ if(p !== panel) p.style.display = 'none'; });
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
+/* screenshot flow */
+btnScreenshot.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  togglePanel(panelScreenshot);
+});
+
+doCapture.addEventListener('click', async ()=>{
+  panelScreenshot.style.display = 'none';
+  // try using html2canvas if available
+  if(window.html2canvas){
+    toast('Capturing screenshot...');
+    try{
+      const canvas = await html2canvas(messagesEl, { backgroundColor: null, scale: 1.5 });
+      canvas.toBlob(async (blob) => {
+        if(!blob){ toast('Capture failed'); return; }
+        const fd = new FormData();
+        fd.append('screenshot', blob, 'chat_screenshot.png');
+        fd.append('conversation_id', activeConvId || '');
+        // send to server
+        try{
+          const res = await fetch('/screenshot-chat', { method: 'POST', body: fd });
+          if(!res.ok) throw new Error('Upload failed ' + res.status);
+          const data = await res.json();
+          toast('Screenshot uploaded');
+          showModal(`<h3>Screenshot uploaded</h3><p>Server response: ${escapeHtml(data.message || 'OK')}</p>`);
+        }catch(err){
+          toast('Upload failed; try server capture');
+          console.warn(err);
+        }
+      }, 'image/png');
+    }catch(err){
+      console.error(err);
+      toast('Capture failed; try server capture');
+    }
+  }else{
+    // html2canvas missing; ask server fallback
+    toast('html2canvas not available; asking server to capture');
+    try{
+      const res = await fetch('/screenshot-chat', { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ fallback: true, conversation_id: activeConvId }) });
+      if(!res.ok) throw new Error('Server failed ' + res.status);
+      const data = await res.json();
+      showModal(`<h3>Server capture</h3><p>Server response: ${escapeHtml(data.message || 'OK')}</p>`);
+    }catch(err){
+      toast('Server capture failed');
+    }
+  }
+});
+
+/* ask server to create screenshot (alternative) */
+doCaptureServer.addEventListener('click', async ()=>{
+  panelScreenshot.style.display = 'none';
+  toast('Requesting server capture...');
+  try{
+    const res = await fetch('/screenshot-chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ conversation_id: activeConvId, request_capture: true }) });
+    if(!res.ok) throw new Error('Server failed ' + res.status);
+    const data = await res.json();
+    showModal(`<h3>Server capture</h3><p>Server response: ${escapeHtml(data.message || 'OK')}</p>`);
+  }catch(err){
+    toast('Server capture failed');
+  }
+});
+
+/* translate flow */
+btnTranslate.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  togglePanel(panelTranslate);
+});
+doTranslate.addEventListener('click', async ()=>{
+  const lang = (translateLang.value || 'en').trim();
+  const text = (document.body && document.body.innerText) ? document.body.innerText.slice(0, 50000) : '';
+  translateResult.textContent = 'Translating...';
+  try{
+    const res = await fetch('/translate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text, targetLang: lang }) });
+    if(!res.ok) throw new Error('Translate failed ' + res.status);
+    const data = await res.json();
+    translateResult.textContent = data.translatedText || data.result || 'No translation returned';
+  }catch(err){
+    translateResult.textContent = 'Translation failed: ' + (err.message || '');
+  }
+});
+
+/* wrong / report flow */
+btnWrong.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  togglePanel(panelWrong);
+});
+panelWrong.querySelectorAll('.opt').forEach(el=>{
+  el.addEventListener('click', ()=> {
+    // put reason into extra input and auto-send
+    wrongExtra.value = el.dataset.reason;
+  });
+});
+doReportWrong.addEventListener('click', async ()=>{
+  const reason = (wrongExtra.value || '').trim() || 'Reported via quick report';
+  panelWrong.style.display = 'none';
+  // call server
+  try{
+    const res = await fetch('/report-wrong', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ conversation_id: activeConvId, reason }) });
+    if(!res.ok) throw new Error('Report failed ' + res.status);
+    const data = await res.json();
+    toast('Reported — thank you');
+    showModal(`<h3>Reported</h3><p>Server response: ${escapeHtml(data.message || 'Reported')}</p>`);
+  }catch(err){
+    toast('Report failed');
+  }
+});
+
+/* power / hide options */
+btnPower.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  togglePanel(panelPower);
+});
+optHideSite.addEventListener('click', async ()=>{
+  panelPower.style.display = 'none';
+  // set preference in localStorage
+  localStorage.setItem('alienx_hide_site', 'true');
+  // notify server
+  try{
+    await fetch('/preference/power', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action: 'hide_site' }) });
+    toast('Hidden on this site (will persist until cleared)');
+  }catch(e){
+    toast('Hidden locally (server notify failed)');
+  }
+  // visually hide floating bar for this site session
+  floatingBar.style.display = 'none';
+});
+optHideAlways.addEventListener('click', async ()=>{
+  panelPower.style.display = 'none';
+  localStorage.setItem('alienx_hide_always', 'true');
+  try{
+    await fetch('/preference/power', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action: 'hide_always' }) });
+    toast('Hidden always (preference saved)');
+  }catch(e){
+    toast('Preference saved locally (server notify failed)');
+  }
+  floatingBar.style.display = 'none';
+});
+
+/* apply stored hide preference on load */
+(function applyHidePref(){
+  try{
+    if(localStorage.getItem('alienx_hide_always') === 'true' || localStorage.getItem('alienx_hide_site') === 'true'){
+      floatingBar.style.display = 'none';
+    }
+  }catch(e){}
+})();
+
+/* ====== Close features panel on outside click (already did similar above) ====== */
+document.addEventListener('click', (e)=>{
+  const insideFeatures = featuresPanel.contains(e.target) || plusBtn.contains(e.target);
+  if(!insideFeatures) featuresPanel.style.display = 'none';
+});
+
+/* ====== SETTINGS (left side) behaviour ====== */
+/* Toggle settings panel */
+settingsTouch.addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  const visible = settingsPanel.style.display === 'block';
+  if(visible){
+    settingsPanel.style.display = 'none';
+  } else {
+    settingsPanel.style.display = 'block';
+    settingsStatus.textContent = 'Loading settings...';
+    await loadSettingsFromServer();
+  }
+});
+
+/* Close settings */
+btnCloseSettings.addEventListener('click', ()=> settingsPanel.style.display = 'none');
+
+/* Load settings from server (GET /settings/get) */
+async function loadSettingsFromServer(){
+  try{
+    const res = await fetch('/settings/get');
+    if(!res.ok) throw new Error('Failed to load');
+    const data = await res.json();
+    // expected shape: { email, notifications, theme }
+    settingsEmail.textContent = data.email || 'Not set';
+    toggleNotifications.checked = !!data.notifications;
+    selectTheme.value = data.theme || 'dark';
+    settingsStatus.textContent = 'Settings loaded';
+  }catch(err){
+    settingsStatus.textContent = 'Unable to load settings (offline).';
+    // fallback defaults
+    settingsEmail.textContent = 'guest@example.com';
+    toggleNotifications.checked = false;
+    selectTheme.value = 'dark';
+  }
+}
+
+/* Edit email (prompt and send to server) */
+btnEditEmail.addEventListener('click', async ()=>{
+  const current = settingsEmail.textContent === '—' ? '' : settingsEmail.textContent;
+  const v = prompt('Enter your email:', current);
+  if(v === null) return;
+  settingsEmail.textContent = v;
+  try{
+    const res = await fetch('/settings/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: v }) });
+    if(!res.ok) throw new Error('Save failed');
+    toast('Email updated');
+  }catch(err){
+    toast('Failed to update email (saved locally)');
+  }
+});
+
+/* Toggle notifications -> server */
+toggleNotifications.addEventListener('change', async ()=>{
+  const val = toggleNotifications.checked;
+  try{
+    await fetch('/settings/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ notifications: val }) });
+    toast('Notifications ' + (val ? 'enabled' : 'disabled'));
+  }catch(err){
+    toast('Failed to update (local only)');
+  }
+});
+
+/* Theme change */
+selectTheme.addEventListener('change', async ()=>{
+  const theme = selectTheme.value;
+  try{
+    await fetch('/settings/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ theme }) });
+    toast('Theme set to ' + theme);
+    // apply simple theme toggle (demo)
+    if(theme === 'light'){
+      document.documentElement.style.setProperty('--bg','#f5f7fb');
+      document.documentElement.style.setProperty('--text','#071220');
+    } else {
+      document.documentElement.style.setProperty('--bg','#0b0f17');
+      document.documentElement.style.setProperty('--text','#e8ecf3');
+    }
+  }catch(err){
+    toast('Failed to update theme (local only)');
+  }
+});
+
+/* API key dialog */
+btnApiKey.addEventListener('click', async ()=>{
+  const key = prompt('Enter API key (this will be sent to server):');
+  if(key === null) return;
+  try{
+    const res = await fetch('/settings/api-key', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ apiKey: key }) });
+    if(!res.ok) throw new Error('Failed to save API key');
+    toast('API key saved');
+  }catch(err){
+    toast('API key save failed');
+  }
+});
+
+/* Export data */
+btnExportData.addEventListener('click', async ()=>{
+  toast('Preparing export...');
+  try{
+    const res = await fetch('/settings/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ }) });
+    if(!res.ok) throw new Error('Export failed on server');
+    const data = await res.json();
+    // server can return { url } or the file - handle both
+    if(data.url){
+      showModal(`<h3>Export ready</h3><p>Download: <a href="${data.url}" target="_blank">${data.url}</a></p>`);
+    } else {
+      toast('Export requested — check your email');
+    }
+  }catch(err){
+    // fallback: local export of conversations
+    const blob = new Blob([JSON.stringify(conversations, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'conversations.json';
+    a.click();
+    toast('Local export downloaded');
+  }
+});
+
+/* Privacy button */
+btnPrivacy.addEventListener('click', ()=>{
+  showModal('<h3>Privacy</h3><p>Manage retention, export data, or request deletion. This dialog should integrate with your backend endpoints: /privacy/export, /privacy/delete-account</p>');
+});
+
+/* ====== Close settings if clicked outside ====== */
+document.addEventListener('click', (e)=>{
+  const menuSettingsBtn = document.getElementById('menuSettings');
+  if(!settingsPanel.contains(e.target) && e.target !== settingsTouch && e.target !== menuSettingsBtn && !menuSettingsBtn?.contains(e.target)){
+    settingsPanel.style.display = 'none';
+  }
+});
+
+/* ====== Graceful message if backend endpoints not available ====== */
+/* Note: the UI attempts to call many endpoints. Implement server-side routes to receive these requests.
+   When those endpoints are missing the UI falls back to local messages or shows toasts. */
+
+</script>
+</body>
+</html>
